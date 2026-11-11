@@ -1,6 +1,7 @@
 import { getDb } from '../database/sqlite.js';
 import { authorizeCustomerAccess } from '../security/authorization.js';
 import { checkToolCall } from '../security/toolGuardrails.js';
+import { settings } from '../config/settings.js';
 
 export async function getCustomerDetails(customerId, context = {}) {
   const guard = await checkToolCall('getCustomerDetails', { customerId }, context);
@@ -9,7 +10,18 @@ export async function getCustomerDetails(customerId, context = {}) {
   }
 
   const auth = await authorizeCustomerAccess(customerId, context);
-  // Phase 1: auth is DISABLED / allowed=true even across tenants.
+  if (!auth.allowed) {
+    return {
+      error: 'AUTHZ_DENIED',
+      auth,
+      guard,
+      meta: {
+        crossTenant: auth.reason?.includes('Cross-tenant') || false,
+        note: 'Backend authorization blocked customer access before data reached the LLM',
+      },
+    };
+  }
+
   const db = getDb();
   const row = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
   if (!row) {
@@ -25,9 +37,11 @@ export async function getCustomerDetails(customerId, context = {}) {
     guard,
     meta: {
       crossTenant: Boolean(crossTenant),
-      note: crossTenant
-        ? 'Phase 1 vulnerability: returned customer outside session tenant'
-        : 'same-tenant or no session tenant set',
+      note: settings.guardrailsEnabled
+        ? 'Authorized same-identity customer lookup'
+        : (crossTenant
+          ? 'Phase 1 vulnerability: returned customer outside session tenant'
+          : 'same-tenant or no session tenant set'),
     },
   };
 }
@@ -39,6 +53,10 @@ export async function updateCustomerRecord(customerId, data = {}, context = {}) 
   }
 
   const auth = await authorizeCustomerAccess(customerId, context);
+  if (!auth.allowed) {
+    return { error: 'AUTHZ_DENIED', customerId, auth, guard };
+  }
+
   const db = getDb();
   const existing = db.prepare('SELECT * FROM customers WHERE id = ?').get(customerId);
   if (!existing) {

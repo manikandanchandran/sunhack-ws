@@ -102,11 +102,28 @@ async function init() {
     els.tryPrompts.appendChild(li);
   }
 
-  renderStatusStack(els.status, 'GUARDRAILS DISABLED');
+  const guarded = Boolean(currentLab.guardrailsEnabled);
+  renderStatusStack(els.status, guarded ? 'GUARDRAILS ENABLED' : 'GUARDRAILS DISABLED');
+  const pill = document.querySelector('#guard-pill');
+  if (pill) {
+    pill.textContent = guarded ? 'GUARDRAILS ENABLED' : 'GUARDRAILS DISABLED';
+    pill.classList.toggle('ok', guarded);
+    pill.classList.toggle('warn', !guarded);
+  }
 
-  if (labId === 'lab6') els.sandboxWrap.hidden = false;
+  if (labId === 'lab6') {
+    els.sandboxWrap.hidden = false;
+    const note = document.createElement('p');
+    note.className = 'muted';
+    note.textContent = guarded
+      ? 'Secured chat uses plain text. The sandbox below is an isolated vulnerable demo (?demo=1) for before/after only.'
+      : 'Scripts only inside this box. Not the parent page.';
+    els.sandboxWrap.prepend(note);
+  }
   if (currentLab.directReplay) {
-    document.querySelector('#btn-direct-replay').hidden = false;
+    const btn = document.querySelector('#btn-direct-replay');
+    btn.hidden = false;
+    btn.textContent = guarded ? 'Prove backend block' : 'Prove backend flaw';
   }
 
   await hydrateHistory();
@@ -126,8 +143,15 @@ async function submitChat(message) {
     appendBubble(els.chatLog, 'assistant', result.reply || '(empty response)');
     renderStatusStack(els.status, result.securityStatus);
     renderTraces(result.traces || []);
-    if (labId === 'lab6' && /<script|SCRIPT_RAN/i.test(result.reply || '')) {
-      els.sandboxFrame.src = `/api/labs/lab6/sandbox-html?payload=${encodeURIComponent(result.reply)}`;
+    if (labId === 'lab6') {
+      // Normal secured chat stays text-only. Isolated vulnerable demo is opt-in for comparison.
+      const showVulnerableDemo = !currentLab.guardrailsEnabled
+        && /<script|SCRIPT_RAN/i.test(result.reply || '');
+      if (showVulnerableDemo) {
+        els.sandboxFrame.src = `/api/labs/lab6/sandbox-html?demo=1&payload=${encodeURIComponent(result.reply)}`;
+      } else if (currentLab.guardrailsEnabled) {
+        els.sandboxFrame.src = 'about:blank';
+      }
     }
   } catch (err) {
     appendBubble(els.chatLog, 'assistant', `Error: ${err.message}`);

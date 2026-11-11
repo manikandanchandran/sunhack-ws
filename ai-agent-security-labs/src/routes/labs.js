@@ -81,10 +81,21 @@ router.post('/api/labs/:labId/direct-replay', async (req, res) => {
 router.get('/api/labs/:labId/sandbox-html', (req, res) => {
   const lab = getLab(req.params.labId);
   if (!lab || lab.id !== 'lab6') return res.status(404).json({ error: 'Not available' });
+
+  // Isolated vulnerable-demo fixture for before/after comparison only.
+  // Never used as the normal secured chat renderer when guardrails are enabled.
+  const demoOnly = String(req.query.demo || '') === '1' || !settings.guardrailsEnabled;
+  if (!demoOnly) {
+    return res.status(403).json({
+      error: 'Vulnerable HTML sandbox is disabled for secured chat. Use ?demo=1 for isolated before/after comparison only.',
+      renderMode: 'text',
+    });
+  }
+
   const html = String(req.query.payload || lab.seededHtmlPayload);
-  // Intentionally vulnerable demo document — served only for iframe sandbox consumption.
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Content-Security-Policy', "sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'");
+  res.setHeader('X-Workshop-Demo', 'VULNERABLE-OUTPUT-FIXTURE-ONLY');
   res.send(`<!doctype html><html><head><meta charset="utf-8"><title>Sandbox</title></head><body>${html}</body></html>`);
 });
 

@@ -6,8 +6,8 @@ import { getCustomerDetails } from '../src/tools/customers.js';
 
 beforeEach(() => resetDatabase());
 
-describe('lab2 sensitive information disclosure', () => {
-  it('documents OWASP LLM02:2026 and exposes cross-tenant lookup', async () => {
+describe('lab2 sensitive information disclosure (phase 2 defend)', () => {
+  it('documents OWASP LLM02:2026 and blocks cross-tenant lookup', async () => {
     const app = freshApp();
     await withServer(app, async (base) => {
       const { data } = await jarFetch(base, '/api/labs/lab2');
@@ -24,18 +24,26 @@ describe('lab2 sensitive information disclosure', () => {
         cookie,
         body: {},
       });
-      assert.equal(replay.data.result.customer.id, 'C-2001');
-      assert.equal(replay.data.result.meta.crossTenant, true);
+      assert.equal(replay.data.result.error, 'AUTHZ_DENIED');
+      assert.equal(replay.data.result.customer, undefined);
     });
   });
 
-  it('proves backend auth flaw without model', async () => {
-    const result = await getCustomerDetails('C-2001', {
+  it('proves backend authz blocks without model', async () => {
+    const denied = await getCustomerDetails('C-2001', {
       tenantId: 'tenant-phoenix',
       customerId: 'C-1001',
       labId: 'lab2',
     });
-    assert.equal(result.auth.status, 'DISABLED');
-    assert.equal(result.meta.crossTenant, true);
+    assert.equal(denied.auth.allowed, false);
+    assert.equal(denied.auth.evaluator, 'BACKEND_AUTHZ');
+
+    const allowed = await getCustomerDetails('C-1001', {
+      tenantId: 'tenant-phoenix',
+      customerId: 'C-1001',
+      labId: 'lab2',
+    });
+    assert.equal(allowed.customer.id, 'C-1001');
+    assert.equal(allowed.auth.allowed, true);
   });
 });

@@ -63,6 +63,33 @@ CREATE TABLE IF NOT EXISTS lab_state (
   lab_id TEXT PRIMARY KEY,
   state_json TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS manager_approvals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  amount_limit REAL NOT NULL,
+  status TEXT NOT NULL,
+  approved_by TEXT NOT NULL,
+  note TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+
+CREATE TABLE IF NOT EXISTS compare_observations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  phase TEXT NOT NULL,
+  lab_id TEXT NOT NULL,
+  prompt TEXT,
+  identity_json TEXT,
+  model TEXT,
+  retrieved_json TEXT,
+  tool_calls_json TEXT,
+  database_effects_json TEXT,
+  guardrail_decisions_json TEXT,
+  final_result TEXT,
+  security_status TEXT,
+  created_at TEXT NOT NULL
+);
 `;
 
 export default SCHEMA_SQL;

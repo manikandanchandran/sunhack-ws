@@ -9,6 +9,8 @@ import sessionRoutes, { ensureSession } from './routes/session.js';
 import chatRoutes from './routes/chat.js';
 import labsRoutes from './routes/labs.js';
 import eventsRoutes from './routes/events.js';
+import guardrailsRoutes from './routes/guardrails.js';
+import compareRoutes from './routes/compare.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, '../public');
@@ -59,7 +61,7 @@ export function createApp() {
     res.json({
       ok: true,
       service: 'ai-agent-security-labs',
-      phase: 1,
+      phase: settings.guardrailsEnabled ? 2 : 1,
       guardrailsEnabled: settings.guardrailsEnabled,
       bind: `${settings.host}:${settings.port}`,
     });
@@ -69,9 +71,13 @@ export function createApp() {
   app.use(chatRoutes);
   app.use(labsRoutes);
   app.use(eventsRoutes);
+  app.use(guardrailsRoutes);
+  app.use(compareRoutes);
 
   app.get('/', (_req, res) => res.sendFile(path.join(publicDir, 'index.html')));
   app.get('/dashboard', (_req, res) => res.sendFile(path.join(publicDir, 'dashboard.html')));
+  app.get('/guardrails', (_req, res) => res.sendFile(path.join(publicDir, 'guardrails.html')));
+  app.get('/compare', (_req, res) => res.sendFile(path.join(publicDir, 'compare.html')));
   app.get('/lab:n', (req, res, next) => {
     const n = Number(req.params.n);
     if (n >= 1 && n <= 6) return res.sendFile(path.join(publicDir, 'lab.html'));
@@ -93,11 +99,12 @@ export function startServer() {
   const app = createApp();
   const server = app.listen(settings.port, settings.host, () => {
     console.log('============================================================');
-    console.log(' AI Agent Security Labs — Phase 1 (Build & Break)');
+    console.log(` AI Agent Security Labs — Phase ${settings.guardrailsEnabled ? '2 (Defend)' : '1 (Build & Break)'}`);
     console.log(' FOR LOCAL EDUCATIONAL USE ONLY — bind is localhost');
     console.log(` Open http://localhost:${settings.port}`);
     console.log(` Listening on http://${settings.host}:${settings.port}`);
     console.log(` AI mode: ${settings.fixtureMode ? 'fixture' : settings.aiMode}`);
+    console.log(` Guardrails: ${settings.guardrailsEnabled ? 'ENABLED' : 'DISABLED'}`);
     console.log('============================================================');
   });
   return server;

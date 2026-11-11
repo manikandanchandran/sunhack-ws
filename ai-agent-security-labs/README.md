@@ -1,85 +1,63 @@
-# Build, Break, Defend — AI Agent Security Labs
+# Build, Break, Defend — AI Agent Security Labs (Phase 2 / Guardrail branch)
 
-**FOR LOCAL EDUCATIONAL USE ONLY.** This application contains intentionally vulnerable business-logic integrations for a university cybersecurity workshop. It binds to `127.0.0.1` and must not be deployed publicly.
+**FOR LOCAL EDUCATIONAL USE ONLY.** Instructor defense solution for the university cybersecurity workshop. Binds to `127.0.0.1` and must not be deployed publicly.
+
+Keep this branch **private / unpublished** relative to the student starter. Students should not receive the complete defend solution before the event.
 
 ## Workshop title
 
 **Build, Break, Defend: Securing AI Agents with the OWASP GenAI Top 10**
 
-## What this repo is
+## What this branch is
 
-Student Phase 1 starter: a local Express app with a real OpenAI-compatible agent loop, in-memory SQLite, six OWASP-mapped labs, and disabled application guardrails.
+Phase 2 instructor solution on top of the Phase 1 Build & Break app:
 
-Natural-language chat uses a **real LLM** (OpenAI). The instructor shares a temporary, spend-limited API key during the session. Students do **not** need their own OpenAI account.
+- Same six labs, same LLM gateway, same local tools, same seeded SQLite dataset
+- Plain-English policies in `policies/`
+- Real enforcement: input/context/tool/output checks + backend authorization
+- `/guardrails` playground, `/compare` before/after view, extended `/dashboard`
+- Official `@openai/guardrails` Custom Prompt Check where compatible; labeled custom gateway fallback otherwise
 
 ## Requirements
 
 - Node.js **24 LTS or newer**
-- The temporary OpenAI API key shared by your instructor
-- Internet access to `api.openai.com`
-
-No Docker, local LLM, MySQL/Postgres/Mongo, or cloud account is required.
+- Instructor workshop API key in `.env` (`OPENAI_API_KEY`)
+- `GUARDRAILS_ENABLED=true`
 
 ## Quick start
 
 ```bash
-git clone <repo-url>
 cd ai-agent-security-labs
-cp .env.example .env
-# paste the instructor's key after OPENAI_API_KEY= in .env
-npm ci
+cp .env.example .env   # if needed
+# paste the instructor key after OPENAI_API_KEY=
+npm install --legacy-peer-deps
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The key stays in `.env` on your laptop; the app never sends it to the browser. Never commit `.env`.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Scripts
 
 | Command | Purpose |
 |---|---|
-| `npm start` | Run student app on `127.0.0.1:3000` |
-| `npm test` | Deterministic unit/lab tests |
-| `npm run test:lab1` … `test:lab6` | Per-lab tests |
-| `npm run test:integration` | Opt-in live model test (`RUN_OPENAI_INTEGRATION=true`) |
+| `npm start` | Run Phase 2 app on `127.0.0.1:3000` |
+| `npm test` | Full deterministic suite |
+| `npm run test:security` | Authorization / validation regressions |
+| `npm run test:guardrails` | Policy playground + evaluation tests |
+| `npm run test:integration` | Opt-in live model + guardrail gateway tests |
 
-## Architecture (Phase 1)
+## Defense layers
 
-- Chat UI → local Express server → OpenAI Chat Completions, using the key in `.env`
-- Tool execution is **always local** to this student app
-- In-memory SQLite reseeds on every process start
-- Security pass-through hooks exist but return `status: 'DISABLED'`
+`user input → checkInput → real model → checkRetrievedContext → tool call → checkToolCall + backend authz → local tool → checkOutput → safe text rendering`
 
-## Labs (OWASP Top 10 for LLM Applications 2026)
+Evaluator types: `LLM_GUARDRAIL`, `CUSTOM_GATEWAY_LLM_EVAL`, `HEURISTIC_DETERMINISTIC`, `BACKEND_AUTHZ`, `SCHEMA_VALIDATION`, `TRUSTED_SOURCE_CHECK`, `SAFE_RENDERING`.
 
-1. **Lab 1** — `LLM01:2026` Prompt Injection
-2. **Lab 2** — `LLM02:2026` Sensitive Information Disclosure
-3. **Lab 3** — `LLM05:2026` Data and Model Poisoning
-4. **Lab 4** — `LLM03:2026` Excessive Agency
-5. **Lab 5** — Unsafe tool usage (`LLM03:2026` / ASI02 Tool Misuse)
-6. **Lab 6** — `LLM10:2026` Improper Output Handling
-
-Handouts: [`docs/student-guide.md`](docs/student-guide.md) and [`docs/labs/`](docs/labs/).
-
-## Fixture mode
-
-Set `AI_FIXTURE_MODE=true` only for deterministic local tests or instructor fallback. Fixture responses are clearly labeled and must not be treated as live model behavior.
-
-## Phase 2 hooks (not implemented yet)
-
-Wired pass-throughs in `src/security/*`:
-
-- `checkInput`, `checkRetrievedContext`, `checkToolCall`, `checkOutput`
-- `authorizeCustomerAccess`, `authorizeRefund`
-
-Do not install `@openai/guardrails` until Phase 2 instructions are issued.
+Student-facing defend walkthrough: [`docs/defense-guide.md`](docs/defense-guide.md).
 
 ## Safety boundaries
 
 - Listen address: `127.0.0.1`
-- Synthetic data only
+- Synthetic data only; simulated refunds only
 - No arbitrary SQL, shell, filesystem, or open network-fetch tools
-- Lab 6 HTML demo runs only in a sandboxed iframe (`allow-scripts`, no same-origin)
-
-## Warning
-
-Intentionally vulnerable software. **Do not expose to the public internet.**
+- Never commit `.env` or instructor credentials
+- Vulnerable Lab 6 HTML sandbox is isolated behind `?demo=1` for comparison only

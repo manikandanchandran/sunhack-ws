@@ -19,8 +19,8 @@ function statusPill(text) {
   el.className = 'pill';
   const t = String(text || '');
   if (/ATTACK OBSERVED|CROSS_TENANT|POISONED/i.test(t)) el.classList.add('danger');
-  else if (/REFUSAL|UNSUCCESSFUL|DENIAL/i.test(t)) el.classList.add('warn');
-  else if (/VERIFIED|OK/i.test(t)) el.classList.add('ok');
+  else if (/REFUSAL|UNSUCCESSFUL|DENIAL|BLOCK|REJECTION/i.test(t)) el.classList.add('warn');
+  else if (/VERIFIED|OK|ENABLED|ALLOW|SAFE OUTPUT/i.test(t)) el.classList.add('ok');
   else el.classList.add('warn');
   el.textContent = t;
   return el;

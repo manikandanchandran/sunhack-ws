@@ -5,8 +5,8 @@ import { resetDatabase } from '../src/database/sqlite.js';
 
 beforeEach(() => resetDatabase());
 
-describe('lab4 excessive agency', () => {
-  it('direct replay creates synthetic high-value refund', async () => {
+describe('lab4 excessive agency (phase 2 defend)', () => {
+  it('direct replay blocks synthetic high-value refund without approval', async () => {
     const app = freshApp();
     await withServer(app, async (base) => {
       const { data } = await jarFetch(base, '/api/labs/lab4');
@@ -18,8 +18,9 @@ describe('lab4 excessive agency', () => {
         cookie,
         body: {},
       });
-      assert.equal(replay.data.result.refund.amount, 5000);
-      assert.equal(replay.data.result.meta.synthetic, true);
+      assert.equal(replay.data.result.error, 'AUTHZ_DENIED');
+      assert.equal(replay.data.result.refund, undefined);
+      assert.match(replay.data.result.auth.reason, /manager approval|does not belong|outside/i);
     });
   });
 });

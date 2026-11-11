@@ -16,8 +16,10 @@
       <a class="brand" href="/">AI AGENT SECURITY LABS</a>
       <nav class="nav-links">
         <a href="/dashboard">Dashboard</a>
-        <a href="/docs/student-guide.md">Guide</a>
-        <span class="pill warn" id="mode-pill">LOCAL ONLY</span>
+        <a href="/guardrails">Guardrails</a>
+        <a href="/compare">Compare</a>
+        <a href="/docs/defense-guide.md">Defend guide</a>
+        <span class="pill ok" id="mode-pill">LOCAL ONLY</span>
         <button class="btn secondary" type="button" id="btn-reset-all">Reset data</button>
       </nav>
     </header>
@@ -48,13 +50,13 @@
     </section>
 
     <section class="section" id="labs">
-      <h2>Phase 1 labs</h2>
-      <p>Application guardrails are disabled. The app only listens on this laptop (127.0.0.1).</p>
+      <h2>Phase 2 labs (Defend)</h2>
+      <p>Guardrails and backend authorization are enabled on this branch. Replay the same six attacks and compare outcomes.</p>
       <div class="lab-grid" id="lab-grid"></div>
     </section>
 
     <p class="footer-note">
-      Phase 2 will install guardrails and backend authorization. Starter files include TODO pass-through hooks only — not solutions.
+      Instructor solution branch: policies, authorization, schema validation, safe rendering, /guardrails playground, and /compare.
     </p>
   </div>
 

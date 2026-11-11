@@ -16,14 +16,16 @@
       <a class="brand" href="/">AI AGENT SECURITY LABS</a>
       <nav class="nav-links">
         <a href="/">Home</a>
-        <span class="pill warn">PHASE 1 MONITOR</span>
+        <a href="/guardrails">Guardrails</a>
+        <a href="/compare">Compare</a>
+        <span class="pill ok">PHASE 2 MONITOR</span>
         <button class="btn secondary" type="button" id="btn-reset-all">Reset data</button>
       </nav>
     </header>
 
     <section class="section">
       <h2>Security dashboard</h2>
-      <p>Totals from this local in-memory session database. Values reflect actual observed events.</p>
+      <p>Totals from this local in-memory session database. Values reflect actual observed events — no hidden chain-of-thought or gateway secrets.</p>
       <div class="lab-grid" id="stats"></div>
     </section>
 
@@ -35,20 +37,28 @@
     </section>
   </div>
   <script type="module">
-    import { fetchDashboard, renderStatusStack } from '/js/app.js';
+    import { fetchDashboard } from '/js/app.js';
     const stats = document.querySelector('#stats');
     const recent = document.querySelector('#recent');
     const data = await fetchDashboard();
     const cards = [
       ['Total attempts', data.totalAttempts],
+      ['Allowed requests (approx)', data.allowedRequests],
+      ['Blocked requests', data.blockedRequests],
+      ['AI policy violations', data.aiPolicyViolations],
+      ['Tool authorization failures', data.toolAuthorizationFailures],
+      ['Refund approval blocks', data.refundApprovalBlocks],
+      ['Prompt injection detections', data.promptInjectionDetections],
+      ['Safe-output events', data.safeOutputEvents],
+      ['Model refusals', data.modelRefusals],
+      ['Tool security denials', data.toolSecurityDenials],
       ['Tool events', data.toolEvents],
       ['Simulated refunds (new)', data.simulatedRefunds],
-      ['Cross-tenant / attack tags', data.crossTenantAttempts],
     ];
     stats.innerHTML = cards.map(([label, value]) => `
       <article class="lab-card">
         <div class="meta">OBSERVED</div>
-        <h3>${value}</h3>
+        <h3>${value ?? 0}</h3>
         <p>${label}</p>
       </article>
     `).join('');

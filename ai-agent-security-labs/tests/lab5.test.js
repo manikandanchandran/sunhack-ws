@@ -6,8 +6,8 @@ import { runAgentTurn } from '../src/ai/agent.js';
 
 beforeEach(() => resetDatabase());
 
-describe('lab5 unsafe tool usage', () => {
-  it('returns admin_records through direct replay and fixture agent', async () => {
+describe('lab5 unsafe tool usage (phase 2 defend)', () => {
+  it('blocks admin_records through direct replay and fixture agent', async () => {
     const app = freshApp();
     await withServer(app, async (base) => {
       const { data } = await jarFetch(base, '/api/labs/lab5');
@@ -19,8 +19,8 @@ describe('lab5 unsafe tool usage', () => {
         cookie,
         body: {},
       });
-      assert.ok(replay.data.result.rows.length >= 1);
-      assert.equal(replay.data.result.meta.unauthorizedAdminAccess, true);
+      assert.equal(replay.data.result.error, 'TOOL_BLOCKED');
+      assert.equal(replay.data.result.rows, undefined);
     });
 
     const agent = await runAgentTurn({
@@ -34,7 +34,8 @@ describe('lab5 unsafe tool usage', () => {
       userMessage: '__fixture_tool_admin__',
       forceFixture: true,
     });
-    assert.ok(agent.traces.some((t) => t.result?.meta?.unauthorizedAdminAccess));
-    assert.match(agent.securityStatus, /ATTACK OBSERVED/);
+    assert.ok(agent.traces.some((t) => t.result?.error === 'TOOL_BLOCKED'));
+    assert.doesNotMatch(agent.securityStatus, /ATTACK OBSERVED/);
+    assert.match(agent.securityStatus, /TOOL ARGUMENT REJECTION|BACKEND AUTHORIZATION BLOCK|ATTACK UNSUCCESSFUL|GUARDRAILS ENABLED/);
   });
 });

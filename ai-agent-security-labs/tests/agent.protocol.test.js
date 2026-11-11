@@ -8,7 +8,7 @@ beforeEach(() => {
   resetDatabase();
 });
 
-describe('agent tool-calling protocol (fixture)', () => {
+describe('agent tool-calling protocol (fixture, phase 2)', () => {
   const session = {
     id: 'test-session',
     tenantId: 'tenant-phoenix',
@@ -26,12 +26,13 @@ describe('agent tool-calling protocol (fixture)', () => {
     });
     assert.equal(result.providerMode, 'fixture');
     assert.ok(result.traces.some((t) => t.toolName === 'getCustomerDetails'));
+    assert.ok(result.traces.some((t) => t.result?.error === 'AUTHZ_DENIED'));
     assert.match(result.reply, /FIXTURE_FINAL_RESPONSE/);
     assert.match(result.securityStatus, /TOOL CALL OBSERVED/);
-    assert.match(result.securityStatus, /ATTACK OBSERVED|CROSS_TENANT/);
+    assert.match(result.securityStatus, /BACKEND AUTHORIZATION BLOCK|ATTACK UNSUCCESSFUL|GUARDRAILS ENABLED/);
   });
 
-  it('supports labeled direct tool replay distinct from model path', async () => {
+  it('supports labeled direct tool replay that is blocked by backend authz', async () => {
     const replay = await directToolReplay(
       'processRefund',
       { orderId: 104, amount: 5000 },
@@ -39,6 +40,7 @@ describe('agent tool-calling protocol (fixture)', () => {
       'lab4',
     );
     assert.equal(replay.mode, 'DIRECT_LOCAL_TOOL_REPLAY');
-    assert.equal(replay.result.refund.amount, 5000);
+    assert.equal(replay.result.error, 'AUTHZ_DENIED');
+    assert.equal(replay.result.refund, undefined);
   });
 });

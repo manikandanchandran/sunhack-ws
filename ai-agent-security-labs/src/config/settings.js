@@ -17,7 +17,8 @@ export const settings = Object.freeze({
   // Server-side only: never sent to the browser or written to logs.
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   aiModel: process.env.AI_MODEL || 'gpt-4o-mini',
-  guardrailsEnabled: bool(process.env.GUARDRAILS_ENABLED, false),
+  // Phase 2 / guardrail branch defaults to defenses ON.
+  guardrailsEnabled: bool(process.env.GUARDRAILS_ENABLED, true),
   fixtureMode: bool(process.env.AI_FIXTURE_MODE, false),
   sessionSecret: process.env.SESSION_SECRET || 'workshop-local-dev-secret',
   maxAgentRounds: Number(process.env.MAX_AGENT_ROUNDS || 6),

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Before / After Compare — AI Agent Security Labs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" href="/">AI AGENT SECURITY LABS</a>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="/guardrails">Guardrails</a>
+        <a href="/dashboard">Dashboard</a>
+        <span class="pill warn">BEFORE / AFTER</span>
+      </nav>
+    </header>
+
+    <section class="section">
+      <h2>Phase 1 vs Phase 2 comparison</h2>
+      <p>Same prompts, identity, model family, seeded dataset, and attack scenarios. Replay Phase 2 chats to add live “after” rows.</p>
+      <div class="banner">Model refusal in Phase 1 is labeled unsuccessful model attempt — not a successful breach.</div>
+      <label for="lab-filter">Filter lab</label>
+      <select id="lab-filter">
+        <option value="">All labs</option>
+        <option>lab1</option><option>lab2</option><option>lab3</option>
+        <option>lab4</option><option>lab5</option><option>lab6</option>
+      </select>
+    </section>
+
+    <section class="section" id="pairs"></section>
+  </div>
+  <script type="module">
+    import { api } from '/js/app.js';
+
+    const pairsEl = document.querySelector('#pairs');
+    const filter = document.querySelector('#lab-filter');
+
+    function card(title, obj) {
+      return `
+        <article class="lab-card">
+          <div class="meta">${title}</div>
+          <pre class="mono" style="white-space:pre-wrap; max-height:280px; overflow:auto;">${escapeHtml(JSON.stringify(obj, null, 2))}</pre>
+        </article>
+      `;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    async function load() {
+      const labId = filter.value || '';
+      const data = await api(`/api/compare${labId ? `?labId=${labId}` : ''}`);
+      pairsEl.innerHTML = (data.pairs || []).map((pair) => `
+        <div class="section">
+          <h3>${pair.labId}</h3>
+          <p><strong>Prompt:</strong> ${escapeHtml(pair.prompt || '')}</p>
+          <p class="muted">Identity: ${escapeHtml(JSON.stringify(pair.identity || {}))} · Model before/after: ${escapeHtml(pair.model?.before || '')} / ${escapeHtml(pair.model?.after || '')}</p>
+          <p>Phase 1: ${escapeHtml(pair.interpretation?.phase1Label || '')}</p>
+          <p>Phase 2: ${escapeHtml(pair.interpretation?.phase2Label || '')}</p>
+          <p class="muted">${escapeHtml(pair.interpretation?.distinction || '')}</p>
+          <div class="lab-grid">
+            ${card('Phase 1 observation', pair.before)}
+            ${card('Phase 2 observation', pair.after || { note: 'Replay the same attack with guardrails enabled to populate this side.' })}
+          </div>
+        </div>
+      `).join('') || '<p class="muted">No observations yet.</p>';
+    }
+
+    filter.addEventListener('change', () => load().catch(console.error));
+    load().catch((err) => { pairsEl.textContent = err.message; });
+  </script>
+</body>
+</html>
