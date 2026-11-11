@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BUILD. BREAK. DEFEND. — AI Agent Security Labs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" href="/">AI AGENT SECURITY LABS</a>
+      <nav class="nav-links">
+        <a href="/dashboard">Dashboard</a>
+        <a href="/docs/student-guide.md">Guide</a>
+        <span class="pill warn" id="mode-pill">LOCAL ONLY</span>
+        <button class="btn secondary" type="button" id="btn-reset-all">Reset data</button>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <h1 class="hero-kicker">BUILD. BREAK. DEFEND.</h1>
+      <p>Securing AI Agents with the OWASP GenAI Top 10</p>
+      <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.5rem; position:relative; z-index:1;">
+        <a class="btn" href="#labs">Start Labs</a>
+        <a class="btn secondary" href="/dashboard">Security Monitor</a>
+      </div>
+      <div class="banner" style="margin-top:1.5rem; max-width:40rem; position:relative; z-index:1;">
+        FOR LOCAL EDUCATIONAL USE ONLY. Intentionally vulnerable business logic. Binds to 127.0.0.1. Do not deploy publicly.
+      </div>
+    </section>
+
+    <section class="section" id="setup">
+      <h2>Your identity</h2>
+      <p>The model key comes from the <code>.env</code> file on this laptop and never reaches the browser.</p>
+      <div class="panel" style="max-width:520px;">
+        <div class="muted" id="access-status">Checking session…</div>
+        <label for="identity-select">Fictional identity (trusted session context)</label>
+        <select id="identity-select"></select>
+        <label for="customer-id">Customer id</label>
+        <input id="customer-id" type="text" value="C-1001" />
+        <button class="btn ghost" id="btn-identity" type="button">Set identity</button>
+      </div>
+    </section>
+
+    <section class="section" id="labs">
+      <h2>Phase 1 labs</h2>
+      <p>Application guardrails are disabled. The app only listens on this laptop (127.0.0.1).</p>
+      <div class="lab-grid" id="lab-grid"></div>
+    </section>
+
+    <p class="footer-note">
+      Phase 2 will install guardrails and backend authorization. Starter files include TODO pass-through hooks only — not solutions.
+    </p>
+  </div>
+
+  <script type="module">
+    import { loadSession, setIdentity, fetchLabs } from '/js/app.js';
+
+    const grid = document.querySelector('#lab-grid');
+    const accessStatus = document.querySelector('#access-status');
+    const identity = document.querySelector('#identity-select');
+    const customerId = document.querySelector('#customer-id');
+
+    async function boot() {
+      const session = await loadSession();
+      document.querySelector('#mode-pill').textContent =
+        session.aiMode === 'fixture' ? 'FIXTURE MODE' : 'LIVE MODEL';
+      accessStatus.textContent = session.hasApiKey || session.aiMode === 'fixture'
+        ? 'Model connection ready'
+        : 'OPENAI_API_KEY is missing in .env — chat will not work.';
+      identity.innerHTML = Object.entries(session.tenants)
+        .map(([k, t]) => `<option value="${k}" ${k === session.tenantKey ? 'selected' : ''}>${t.label}</option>`)
+        .join('');
+      customerId.value = session.customerId;
+
+      const { labs } = await fetchLabs();
+      grid.innerHTML = labs.map((lab) => `
+        <article class="lab-card">
+          <div class="meta">${lab.owasp.id} · ${lab.status}</div>
+          <h3>${lab.title}</h3>
+          <p>${lab.objective}</p>
+          <a class="btn" href="${lab.route}">Start Lab</a>
+        </article>
+      `).join('');
+    }
+
+    document.querySelector('#btn-identity').addEventListener('click', async () => {
+      await setIdentity(identity.value, customerId.value.trim());
+      accessStatus.textContent = 'Identity updated (server session)';
+    });
+
+    boot().catch((err) => {
+      accessStatus.textContent = err.message;
+    });
+  </script>
+</body>
+</html>

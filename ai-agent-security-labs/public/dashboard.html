@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard — AI Agent Security Labs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/css/styles.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="wrap">
+    <header class="topbar">
+      <a class="brand" href="/">AI AGENT SECURITY LABS</a>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <span class="pill warn">PHASE 1 MONITOR</span>
+        <button class="btn secondary" type="button" id="btn-reset-all">Reset data</button>
+      </nav>
+    </header>
+
+    <section class="section">
+      <h2>Security dashboard</h2>
+      <p>Totals from this local in-memory session database. Values reflect actual observed events.</p>
+      <div class="lab-grid" id="stats"></div>
+    </section>
+
+    <section class="section">
+      <h2>Recent attempts</h2>
+      <div class="panel">
+        <pre class="mono" id="recent"></pre>
+      </div>
+    </section>
+  </div>
+  <script type="module">
+    import { fetchDashboard, renderStatusStack } from '/js/app.js';
+    const stats = document.querySelector('#stats');
+    const recent = document.querySelector('#recent');
+    const data = await fetchDashboard();
+    const cards = [
+      ['Total attempts', data.totalAttempts],
+      ['Tool events', data.toolEvents],
+      ['Simulated refunds (new)', data.simulatedRefunds],
+      ['Cross-tenant / attack tags', data.crossTenantAttempts],
+    ];
+    stats.innerHTML = cards.map(([label, value]) => `
+      <article class="lab-card">
+        <div class="meta">OBSERVED</div>
+        <h3>${value}</h3>
+        <p>${label}</p>
+      </article>
+    `).join('');
+    recent.textContent = JSON.stringify(data.recent, null, 2);
+  </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "ai-agent-security-labs",
+  "version": "1.0.0",
+  "description": "Build, Break, Defend: Securing AI Agents with the OWASP GenAI Top 10 — Phase 1 student labs (LOCAL EDUCATIONAL USE ONLY)",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/**/*.test.js",
+    "test:lab1": "node --test tests/lab1.test.js",
+    "test:lab2": "node --test tests/lab2.test.js",
+    "test:lab3": "node --test tests/lab3.test.js",
+    "test:lab4": "node --test tests/lab4.test.js",
+    "test:lab5": "node --test tests/lab5.test.js",
+    "test:lab6": "node --test tests/lab6.test.js",
+    "test:integration": "node --test tests/integration.openai.test.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "openai": "^4.86.2",
+    "uuid": "^11.1.0"
+  }
+}
